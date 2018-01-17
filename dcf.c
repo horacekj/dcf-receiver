@@ -2,11 +2,13 @@
 #include "dcf.h"
 
 const uint16_t FALL_EDGE_TIME_MAX = 3000;
+const uint8_t PULSE_MIN_RECOGNIZE_VAL = 70;
 
 volatile uint16_t fall_edge_counter = 0;
 volatile int8_t bit_index = -1;
 volatile int16_t low_counter = -1;
 volatile int8_t pulse_amplitude = 0; // length of "low" pulse
+volatile DcfDatetime data;
 
 // External interrupt from DCF77 pin.
 ISR(INT0_vect) {
@@ -39,10 +41,12 @@ ISR(INT0_vect) {
 }
 
 void dcf_1ms_update(void) {
+	// Measuring time between 2 falling edges.
 	// Do do increment when limit reached.
 	if (fall_edge_counter < FALL_EDGE_TIME_MAX)
 		fall_edge_counter++;
 
+	// Measuring length of the "low" state.
 	if (low_counter > -1) {
 		low_counter++;
 		if (low_counter == 100)
@@ -60,7 +64,14 @@ void dcf_1ms_update(void) {
 }
 
 void evaluate_bit(int8_t state) {
-	
+	bool value;
+	if (state > PULSE_MIN_RECOGNIZE_VAL)
+		value = true;
+	else if (state < -PULSE_MIN_RECOGNIZE_VAL)
+		value = false;
+	else {
+		// Not sure what the data is.
+	}
 }
 
 void dcf_init(void) {
