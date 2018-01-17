@@ -3,10 +3,6 @@
 # WinAVR C++ Makefile Template written by Eric B. Weddington, Jörg Wunsch,
 # Jan Horacek, et al.
 #
-# Diversity 2013: team Awesome
-# last modification: 15.6.2013
-# jan.horacek@seznam.cz
-#
 # Released to the Public Domain
 #
 # Additional material for this makefile was written by:
@@ -86,10 +82,10 @@ OBJDIR = obj
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = i2c.c serial.c
+SRC = main.c i2c.c serial.c dcf.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
-CPPSRC = main.cpp
+CPPSRC =
 
 
 # List Assembler source files here.
@@ -127,7 +123,7 @@ EXTRAINCDIRS =
 #     gnu89 = c89 plus GCC extensions
 #     c99   = ISO C99 standard (not yet fully implemented)
 #     gnu99 = c99 plus GCC extensions
-# CSTANDARD = -std=gnu99
+CSTANDARD = -std=c99
 CPPSTANDARD = -std=c++14
 
 
@@ -345,7 +341,7 @@ DEBUG_HOST = localhost
 
 # Define programs and commands.
 SHELL = sh
-CC = avr-g++
+CC = avr-gcc
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE = avr-size
