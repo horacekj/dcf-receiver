@@ -1,12 +1,22 @@
 #include <avr/interrupt.h>
 #include "dcf.h"
 
-volatile int fall_edge_counter = 0;
+const uint16_t FALL_EDGE_TIME_MAX = 3000;
 
-// External interrupt from DCF77 pin
+volatile uint16_t fall_edge_counter = 0;
+volatile int8_t bit_index = -1;
+
+// External interrupt from DCF77 pin.
 ISR(INT0_vect) {
-	if (fall_edge_counter < 800)
+	if (fall_edge_counter < 800) {
+		// Ignore sooner falling edge. We hope ve did not loose sync.
 		return;
+	}
+	if (fall_edge_counter >= FALL_EDGE_TIME_MAX) {
+		// Falling edge too late -> we loosed sync -> reset counter.
+		fall_edge_counter = 0;
+		return;
+	}
 
 	char str[8];
 	itoa(fall_edge_counter, str, 10);
@@ -15,9 +25,9 @@ ISR(INT0_vect) {
 }
 
 void dcf_1ms_update(void) {
-	fall_edge_counter++;
-	if (fall_edge_counter >= 5000)
-		fall_edge_counter = 0;
+	// Do do increment when limit reached.
+	if (fall_edge_counter < FALL_EDGE_TIME_MAX)
+		fall_edge_counter++;
 }
 
 void dcf_init(void) {
