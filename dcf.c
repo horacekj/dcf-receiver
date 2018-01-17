@@ -5,6 +5,8 @@ const uint16_t FALL_EDGE_TIME_MAX = 3000;
 
 volatile uint16_t fall_edge_counter = 0;
 volatile int8_t bit_index = -1;
+volatile int16_t low_counter = -1;
+volatile int8_t pulse_amplitude = 0; // length of "low" pulse
 
 // External interrupt from DCF77 pin.
 ISR(INT0_vect) {
@@ -18,6 +20,18 @@ ISR(INT0_vect) {
 		return;
 	}
 
+	if ((bit_index > 0) && (bit_index < 59)) {
+		// New bit -> start measuring lenght of "low" state.
+		bit_index++;
+		low_counter = 0;
+	}
+
+	if ((fall_edge_counter >= 1950) && (fall_edge_counter <= 2050)) {
+		// Beginning of a message.
+		bit_index = 0;
+		low_counter = 0;
+	}
+
 	char str[8];
 	itoa(fall_edge_counter, str, 10);
 	fall_edge_counter = 0;
@@ -28,6 +42,25 @@ void dcf_1ms_update(void) {
 	// Do do increment when limit reached.
 	if (fall_edge_counter < FALL_EDGE_TIME_MAX)
 		fall_edge_counter++;
+
+	if (low_counter > -1) {
+		low_counter++;
+		if (low_counter == 100)
+			pulse_amplitude = 0;
+
+		if (low_counter > 100)
+			pulse_amplitude += (PIND & 0x01) ? 1 : -1;
+
+		if (low_counter == 200) {
+			low_counter = -1;
+			evaluate_bit(pulse_amplitude);
+			pulse_amplitude = 0;
+		}
+	}
+}
+
+void evaluate_bit(int8_t state) {
+	
 }
 
 void dcf_init(void) {
