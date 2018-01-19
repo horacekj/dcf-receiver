@@ -12,15 +12,15 @@ volatile int8_t bit_index = -1;
 volatile int16_t low_counter = -1;
 volatile int8_t pulse_amplitude = 0; // length of "low" pulse
 volatile DcfDatetime received;
+volatile void(*callback)(DcfDatetime*) = NULL;
+volatile bool message_ready = false;
 
 void evaluate_bit(int8_t state);
 bool check_bit(bool state, int8_t index);
 void time_complete(void);
-
 bool check_min_parity(void);
 bool check_hr_parity(void);
 bool check_date_parity(void);
-
 uint8_t bcd_min_to_int(uint8_t min);
 
 // External interrupt from DCF77 pin.
@@ -36,6 +36,11 @@ ISR(INT0_vect) {
 		return;
 	}
 
+	if (message_ready && callback) {
+		(*callback)(&received);
+		message_ready = false;
+	}
+
 	if ((bit_index >= 0) && (bit_index < 58)) {
 		// New bit -> start measuring length of "low" state.
 		bit_index++;
@@ -48,6 +53,7 @@ ISR(INT0_vect) {
 		low_counter = 0;
 		serial_putline("Started receiving new second...");
 	}
+
 
 	fall_edge_counter = 0;
 }
@@ -102,9 +108,8 @@ void evaluate_bit(int8_t state) {
 	} else
 		received.raw_sure &= ~(1ULL << bit_index);
 
-	char str[32];
-	ltoa(received.raw_sure, str, 16);
-	ltoa(received.raw_sure >> 32, str+8, 16);
+	char str[8];
+	itoa(bit_index, str, 10);
 	serial_putline(str);
 
 	if (bit_index == 58)
@@ -119,21 +124,17 @@ bool check_bit(bool state, int8_t index) {
 }
 
 void time_complete(void) {
-	/*if (received.raw_sure != DCF_SURE_ALL) {
+	if (received.raw_sure != DCF_SURE_ALL) {
 		serial_putline("Whole message received unsuccessfully!");
 		return;
-	}*/
+	}
 
 	if (!check_min_parity() || !check_hr_parity() || !check_date_parity()) {
 		serial_putline("Parity error!");
 		return;
 	}
 
-	char str[32];
-	itoa(bcd_min_to_int(received.data.parsed.min), str, 10);
-	serial_putline(str);
-
-	serial_putline("Whole message received successfully!");
+	message_ready = true;
 }
 
 bool check_min_parity(void) {
@@ -174,6 +175,6 @@ void dcf_init(void) {
 	received.raw_sure = 0;
 }
 
-uint8_t bcd_min_to_int(uint8_t min) {
-	return (min >> 4) * 10 + (min & 0xF);
+void dcf_register_on_received(void(*fp)(DcfDatetime*)) {
+	callback = fp;
 }
