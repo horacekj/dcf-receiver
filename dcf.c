@@ -1,14 +1,27 @@
 #include <avr/interrupt.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include "dcf.h"
+#include "serial.h"
 
 const uint16_t FALL_EDGE_TIME_MAX = 3000;
-const uint8_t PULSE_MIN_RECOGNIZE_VAL = 70;
+const uint8_t PULSE_MIN_RECOGNIZE_VAL = 40;
 
 volatile uint16_t fall_edge_counter = 0;
 volatile int8_t bit_index = -1;
 volatile int16_t low_counter = -1;
 volatile int8_t pulse_amplitude = 0; // length of "low" pulse
-volatile DcfDatetime data;
+volatile DcfDatetime received;
+
+void evaluate_bit(int8_t state);
+bool check_bit(bool state, int8_t index);
+void time_complete(void);
+
+bool check_min_parity(void);
+bool check_hr_parity(void);
+bool check_date_parity(void);
+
+uint8_t bcd_min_to_int(uint8_t min);
 
 // External interrupt from DCF77 pin.
 ISR(INT0_vect) {
@@ -19,11 +32,12 @@ ISR(INT0_vect) {
 	if (fall_edge_counter >= FALL_EDGE_TIME_MAX) {
 		// Falling edge too late -> we loosed sync -> reset counter.
 		fall_edge_counter = 0;
+		serial_putline("Timeout!");
 		return;
 	}
 
-	if ((bit_index > 0) && (bit_index < 59)) {
-		// New bit -> start measuring lenght of "low" state.
+	if ((bit_index >= 0) && (bit_index < 58)) {
+		// New bit -> start measuring length of "low" state.
 		bit_index++;
 		low_counter = 0;
 	}
@@ -32,12 +46,10 @@ ISR(INT0_vect) {
 		// Beginning of a message.
 		bit_index = 0;
 		low_counter = 0;
+		serial_putline("Started receiving new second...");
 	}
 
-	char str[8];
-	itoa(fall_edge_counter, str, 10);
 	fall_edge_counter = 0;
-	serial_putline(str);
 }
 
 void dcf_1ms_update(void) {
@@ -52,7 +64,7 @@ void dcf_1ms_update(void) {
 		if (low_counter == 100)
 			pulse_amplitude = 0;
 
-		if (low_counter > 100)
+		if (low_counter > 120)
 			pulse_amplitude += (PIND & 0x01) ? 1 : -1;
 
 		if (low_counter == 200) {
@@ -64,14 +76,92 @@ void dcf_1ms_update(void) {
 }
 
 void evaluate_bit(int8_t state) {
-	bool value;
-	if (state > PULSE_MIN_RECOGNIZE_VAL)
-		value = true;
-	else if (state < -PULSE_MIN_RECOGNIZE_VAL)
+	bool value, sure;
+	if (state > PULSE_MIN_RECOGNIZE_VAL) {
 		value = false;
-	else {
-		// Not sure what the data is.
+		sure = true;
+	} else if (state < -PULSE_MIN_RECOGNIZE_VAL) {
+		value = true;
+		sure = true;
+	} else {
+		sure = false;
 	}
+
+	if (sure) {
+		received.raw_sure |= (1ULL << bit_index);
+		if (value)
+			received.data.raw |= (1ULL << bit_index);
+		else
+			received.data.raw &= ~(1ULL << bit_index);
+
+		if (!check_bit(value, bit_index)) {
+			// Message badly corrupted -> stop receiving message.
+			bit_index = -1;
+			serial_putline("Message parse error!");
+		}
+	} else
+		received.raw_sure &= ~(1ULL << bit_index);
+
+	char str[32];
+	ltoa(received.raw_sure, str, 16);
+	ltoa(received.raw_sure >> 32, str+8, 16);
+	serial_putline(str);
+
+	if (bit_index == 58)
+		time_complete();
+}
+
+bool check_bit(bool state, int8_t index) {
+	if (index == 0 && state) return false;
+	if (index == 20 && !state) return false;
+
+	return true;
+}
+
+void time_complete(void) {
+	/*if (received.raw_sure != DCF_SURE_ALL) {
+		serial_putline("Whole message received unsuccessfully!");
+		return;
+	}*/
+
+	if (!check_min_parity() || !check_hr_parity() || !check_date_parity()) {
+		serial_putline("Parity error!");
+		return;
+	}
+
+	char str[32];
+	itoa(bcd_min_to_int(received.data.parsed.min), str, 10);
+	serial_putline(str);
+
+	serial_putline("Whole message received successfully!");
+}
+
+bool check_min_parity(void) {
+	bool parity = false;
+	for(int i = 0; i < MIN_BITS; i++)
+		if (((received.data.parsed.min >> i) & 0x1) == 0x1)
+			parity = !parity;
+	if (received.data.parsed.min_parity)
+		parity = !parity;
+	return !parity;
+}
+
+bool check_hr_parity(void) {
+	bool parity = false;
+	for(int i = 0; i < HR_BITS; i++)
+		if (((received.data.parsed.hr >> i) & 0x1) == 0x1)
+			parity = !parity;
+	if (received.data.parsed.hr_parity)
+		parity = !parity;
+	return !parity;
+}
+
+bool check_date_parity(void) {
+	bool parity = false;
+	for(int i = 36; i < 59; i++)
+		if (((received.data.raw >> i) & 0x1) == 0x1)
+			parity = !parity;
+	return !parity;
 }
 
 void dcf_init(void) {
@@ -80,4 +170,10 @@ void dcf_init(void) {
 	EICRA |= (1 << ISC01); // set INT0 to falling edge
 	EICRA &= ~(1 << ISC00); // set INT0 to falling edge
 	EIMSK |= (1 << INT0); // enable INT0
+
+	received.raw_sure = 0;
+}
+
+uint8_t bcd_min_to_int(uint8_t min) {
+	return (min >> 4) * 10 + (min & 0xF);
 }
