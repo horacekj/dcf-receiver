@@ -51,7 +51,6 @@ ISR(INT0_vect) {
 		// Beginning of a message.
 		bit_index = 0;
 		low_counter = 0;
-		serial_putline("Started receiving new second...");
 	}
 
 
@@ -105,8 +104,10 @@ void evaluate_bit(int8_t state) {
 			bit_index = -1;
 			serial_putline("Message parse error!");
 		}
-	} else
+	} else {
 		received.raw_sure &= ~(1ULL << bit_index);
+		serial_putch('!');
+	}
 
 	char str[8];
 	itoa(bit_index, str, 10);
@@ -125,7 +126,7 @@ bool check_bit(bool state, int8_t index) {
 
 void time_complete(void) {
 	if (received.raw_sure != DCF_SURE_ALL) {
-		serial_putline("Whole message received unsuccessfully!");
+		serial_putline("Read error!");
 		return;
 	}
 
