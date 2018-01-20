@@ -39,7 +39,7 @@ void dcf_on_received(volatile DcfDatetime* dt) {
 	rtc_set_clock(rtc);
 
 	show_time = true;
-	PORTD |= 0x8F;
+	PORTD &= ~(0x80);
 }
 
 void rtc_send_dt(RTC dt) {
@@ -86,6 +86,9 @@ void hw_init(void) {
 	dcf_register_on_received(&dcf_on_received);
 	timer_init();
 	rtc_init();
+
+	DDRD |= 0x80; // PD7 as output for LED
+	PORTD |= 0x80; // PD8 LED off
 
 	sei(); // allow interrupts globally
 }
