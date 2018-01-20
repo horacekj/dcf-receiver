@@ -1,7 +1,7 @@
 #ifndef _I2C_H
 #define _I2C_H
 
-#include <avr/io.h> 
+#include <avr/io.h>
 
 /* Definitions for I2C */
 #define I2C_OUT_PORT            PORTD       /* port for I2C */
@@ -40,4 +40,5 @@ void I2C_Ack_Out(void);             /* Generate ACK for slave for next reading *
 void I2C_Write_Block_W(uint16_t *);     /* Write block of word to I2C */
 void I2C_Read_Block(uint8_t , uint8_t *);   /* Read block from I2C */
 void I2C_Wait(void);                            /* Wait for I2C */
+
 #endif

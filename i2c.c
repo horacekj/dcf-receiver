@@ -1,6 +1,11 @@
 #include <avr/io.h>
 #include "i2c.h"
 
+#define asm __asm__
+#define C_MT_SLA_ACK    0x18
+#define C_MT_DATA_ACK   0x28
+#define C_START         0x8 
+#define C_START_R       0x10 
 
 /*!
  * \brief Wait function for I2C
@@ -21,14 +26,28 @@ void I2C_Wait()
  */
 void I2C_Set_Address(uint8_t adr, uint8_t func)
 {
-	I2C_Start();					/* Generate start condition */
-	/* ** Do you want to write ? */
+	I2C_Start();
+
+	// ** Do you want to write ?
 	if (!func) {
-		I2C_Write_B(0xa0);			/* <Y> Write chip address and operation WRITE */
-		I2C_Write_B(adr);				/* Write low address */
+		TWDR = 0xa0;                            // Address RTC + write signature
+		TWCR = (1<<TWINT) | (1<<TWEN);          // <Y> Write chip address and operation WRITE
+		while (!(TWCR & (1<<TWINT)));
+		if ((TWSR & 0xF8) != C_MT_SLA_ACK)
+				asm volatile("nop\n\tnop\n\tnop\n\tnop\n\t"); // wait
+
+		TWDR = adr;
+		TWCR = (1<<TWINT) | (1<<TWEN);          // Write low address
+		while (!(TWCR & (1<<TWINT)));
+		if ((TWSR & 0xF8) != C_MT_DATA_ACK)
+				asm volatile("nop\n\tnop\n\tnop\n\tnop\n\t"); // wait
+	} else {
+		TWDR = 0xa1;
+		TWCR = (1<<TWINT) | (1<<TWEN);          // <N> Write chip address and operation READ
+		while (!(TWCR & (1<<TWINT)));
+		if ((TWSR & 0xF8) != C_MT_SLA_ACK)
+				asm volatile("nop\n\tnop\n\tnop\n\tnop\n\t"); // wait
 	}
-	else
-		I2C_Write_B(0xa1);			/* <N> Write chip address and operation READ */
 }
 
 /*!
@@ -56,15 +75,10 @@ void I2C_Read_Block(uint8_t i, uint8_t *p_dta)
  */
 void I2C_Start(void)
 {
-	SET_I2C_OUT;					/* Set pins direction to output */
-
-	P_SCL_ON;					/* SDA must go down during SCL is high */
-	I2C_Wait();	/* wait */ 	
-	P_SDA_ON;
-	I2C_Wait();	/* wait */ 	
-	P_SDA_OFF;
-	I2C_Wait();	/* wait */ 
-	P_SCL_OFF;
+	TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);         // Send START condition
+	while (!(TWCR & (1<<TWINT)));                   // Wait for TWINT
+	if (((TWSR & 0xF8) != C_START) && ((TWSR & 0xF8) != C_START_R))
+		asm volatile("nop\n\tnop\n\tnop\n\tnop\n\t"); // error
 }
 
 /*!
@@ -73,15 +87,7 @@ void I2C_Start(void)
  */
 void I2C_Stop(void)
 {
-	SET_I2C_OUT;					/* Set pins direction to output */
-
-	P_SDA_OFF;					/* SDA must go up during SCL is high */
-	I2C_Wait();	/* wait */ 
-	P_SCL_OFF;
-	I2C_Wait();	/* wait */ 
-	P_SCL_ON;
-	I2C_Wait();	/* wait */ 
-	P_SDA_ON;
+	TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO);         // Transmit STOP condition
 }
 
 /*!
@@ -91,25 +97,11 @@ void I2C_Stop(void)
  */
 void I2C_Write_B (uint8_t dta)
 {
-	uint8_t	cnt = 8;
-	do							/* Send one byte to I2C */
-	{
-		(dta & 0x80)? P_SDA_ON : P_SDA_OFF;		/* Set MSB bit to SDA */
-		I2C_Wait();	/* wait */ 
-		P_SCL_ON;
-		I2C_Wait();	/* wait */ 
-		P_SCL_OFF;
-		dta <<= 1;
-	} while (--cnt);
-	/*  Generation of ACK pulse ---- <br> WITHOUT ACK checking </b> */
-	SET_I2C_IN;						/* Set SDA to input */
-
-	P_SCL_ON;
-	I2C_Wait();	/* wait */ 
-	P_SCL_OFF;
-	I2C_Wait();	/* wait */ 
-
-	SET_I2C_OUT;						/* Set SDA to output */
+	TWDR = dta;
+	TWCR = (1<<TWINT) | (1<<TWEN);          // Write low address
+	while (!(TWCR & (1<<TWINT)));
+	if ((TWSR & 0xF8) != C_MT_DATA_ACK)
+		asm volatile("nop\n\tnop\n\tnop\n\tnop\n\t"); // error
 }
 
 /*!
@@ -120,70 +112,14 @@ void I2C_Write_B (uint8_t dta)
  */
 uint8_t I2C_Read_B (uint8_t ack)
 {
-	uint8_t dta = 0;
-	uint8_t cnt = 8;
-
-	SET_I2C_IN;						/* Set SDA to input */
-        I2C_Wait();
-	do
-	{
-		P_SCL_ON;					/* Generate clock pulse */
-		dta <<= 1;
-                I2C_Wait();
-		dta |= bit_is_set(I2C_IN_PORT,I2C_SDA) ? 1 : 0;	/* Read one bit from I2C */
-		P_SCL_OFF;
-                I2C_Wait();
-	} while (--cnt);
-
-	SET_I2C_OUT;	
-	/* ** Do we have to generate ACK ? */
+	uint8_t dta;
 	if (ack)
-		I2C_Ack_Out();					/* <Y> Generate ACK */
+		TWCR |= (1<<TWEA);              // Read next byte
 	else
-		I2C_NoAck_Out();				/* <N> Generate NoACK */
-	return (dta);						/* Return read value */
+		TWCR &= ~(1<<TWEA);             // Stop with reading
+
+	while (!(TWCR & (1<<TWINT)));
+	dta = TWDR;
+	return (dta);                           // Return read value
 }
 
-/*!
- * \brief Function tests ACK pulse generated on I2C
- *
- * \return 0	Err, NoACK from I2C device
- * \return 1	OK,  ACK from I2C device
- */
-uint8_t I2C_Ack_In(void)
-{
-	uint8_t stat;
-	SET_I2C_IN;                                             /* Set SDA as input */
-
-	P_SCL_ON;                                               /* Generation CLK pulse */
-	I2C_Wait();        /* wait */
-	stat = bit_is_set(I2C_IN_PORT,I2C_SDA) ? 0 : 1;
-	P_SCL_OFF;
-	SET_I2C_OUT;                                            /* Set SDA as output */
-	return (stat);
-}
-
-/*!
- * \brief Function I2C_NoAck_Out generates NoACK pulse
- */
-void I2C_NoAck_Out(void)
-{
-	P_SDA_ON;
-	I2C_Wait();         /* wait */
-	P_SCL_ON;
-	I2C_Wait();         /* wait */
-	P_SCL_OFF;
-
-}
-
-/*!
- * \brief Function I2C_Ack_Out generates ACK pulse
- */
-void I2C_Ack_Out(void)
-{
-	P_SDA_OFF;
-	I2C_Wait();         /* wait */
-	P_SCL_ON;
-	I2C_Wait();         /* wait */
-	P_SCL_OFF;
-}
