@@ -605,6 +605,7 @@ clean_list :
 	$(REMOVE) $(CPPSRC:.cpp=.d)
 	$(REMOVE) $(CPPSRC:.cpp=.i)
 	$(REMOVEDIR) .dep
+	$(REMOVEDIR) obj
 
 
 # Create object files directory
