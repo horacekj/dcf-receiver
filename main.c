@@ -10,50 +10,61 @@
 #include "i2c.h"
 
 void hw_init(void);
+volatile bool show_time = false;
 
 ISR(TIMER1_COMPA_vect) {
 	dcf_1ms_update();
 }
 
 void dcf_on_received(volatile DcfDatetime* dt) {
+	dcf_stop();
+
+	RTC rtc;
+	rtc.cntrl = 0x80;
+	rtc.s_1_100 = 0;
+	rtc.s_1_10 = 0;
+	rtc.s_1 = 0;
+	rtc.s_10 = 0;
+	rtc.m_1 = dt->data.parsed.min & 0x0F;
+	rtc.m_10 = (dt->data.parsed.min >> 4) & 0x07;
+	rtc.h_1 = dt->data.parsed.hr & 0x0F;
+	rtc.h_10 = (dt->data.parsed.hr >> 4) & 0x03;
+	rtc.d_1 = dt->data.parsed.day & 0x0F;
+	rtc.d_10 = (dt->data.parsed.day >> 4) & 0x03;
+	rtc.mon_1 = dt->data.parsed.month & 0x0F;
+	rtc.mon_10 = (dt->data.parsed.month >> 4) & 0x01;
+
+	rtc_set_clock(rtc);
+	rtc.cntrl = 0;
+	rtc_set_clock(rtc);
+
+	show_time = true;
+	PORTD |= 0x8F;
+}
+
+void rtc_send_dt(RTC dt) {
 	char str[32];
 
-	sprintf(str, "%d.%d.%d %d:%d:00",
-		bcd_num_to_dec(dt->data.parsed.day, 4, 2),
-		bcd_num_to_dec(dt->data.parsed.month, 4, 1),
-		bcd_num_to_dec(dt->data.parsed.year, 4, 4),
-		bcd_num_to_dec(dt->data.parsed.hr, 4, 2),
-		bcd_num_to_dec(dt->data.parsed.min, 4, 3)
+	sprintf(str, "%d.%d. %d:%d:%d",
+		dt.d_1 + 10*dt.d_10,
+		dt.mon_1 + 10*dt.mon_10,
+		dt.h_1 + 10*dt.h_10,
+		dt.m_1 + 10*dt.m_10,
+		dt.s_1 + 10*dt.s_10
 	);
 	serial_putline(str);
 }
 
 int main(void) {
 	hw_init();
-	serial_putline("Device initialized");
-
-	RTC data;
-	uint8_t *ptr = &data.cntrl;              /* Definition of ptr */
-
-	*ptr++ = 0x80;                     /* Set control 32.768kHz, */
-	*ptr++ = 0;                     /* Set hundredth of sec */   
-	*ptr++ = 0x56;                  /* Set 56 secounds */
-	*ptr++ = 0x34;                  /* Set 34 minutes */
-	*ptr++ = 0x12;                  /* Set 12 hours */
-
-	rtc_set_clock(data);
-	data.cntrl = 0;
-	rtc_set_clock(data);
+	serial_putline("Device initialized.");
+	serial_putline("Waiting for beginning of a minute...");
 
 	while (true) {
-		if (GET_INT_STAT) {
-			data = rtc_get_clock();
-			char str[10];
-			itoa(data.s_1, str, 10);
-			serial_putline(str);
-		}
+		if (show_time)
+			rtc_send_dt(rtc_get_clock());
 
-		for(int i = 0; i < 4; i++)
+		for(int i = 0; i < 5; i++)
 			_delay_ms(200);
 	}
 }
@@ -71,7 +82,7 @@ void timer_init(void) {
 
 void hw_init(void) {
 	serial_init();
-	dcf_init();
+	dcf_start();
 	dcf_register_on_received(&dcf_on_received);
 	timer_init();
 	rtc_init();

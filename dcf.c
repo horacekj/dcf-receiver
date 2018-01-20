@@ -104,14 +104,11 @@ void evaluate_bit(int8_t state) {
 			bit_index = -1;
 			serial_putline("Message parse error!");
 		}
+		serial_putch('#');
 	} else {
 		received.raw_sure &= ~(1ULL << bit_index);
 		serial_putch('!');
 	}
-
-	char str[8];
-	itoa(bit_index, str, 10);
-	serial_putline(str);
 
 	if (bit_index == 58)
 		time_complete();
@@ -166,7 +163,7 @@ bool check_date_parity(void) {
 	return !parity;
 }
 
-void dcf_init(void) {
+void dcf_start(void) {
 	DDRD &= ~((1 << PIN3) | (1 << PIN4)); // DCF data pins as inputs
 	PORTD |= ((1 << PIN3) | (1 << PIN4)); // enable pull-ups
 	EICRA |= (1 << ISC31); // set INT3 to falling edge
@@ -174,6 +171,17 @@ void dcf_init(void) {
 	EIMSK |= (1 << INT3); // enable INT3
 
 	received.raw_sure = 0;
+	fall_edge_counter = 0;
+	bit_index = -1;
+	low_counter = -1;
+	pulse_amplitude = 0;
+}
+
+void dcf_stop(void) {
+	EIMSK &= ~(1 << INT3); // disable INT3
+
+	fall_edge_counter = 0;
+	low_counter = -1;
 }
 
 void dcf_register_on_received(void(*fp)(volatile DcfDatetime*)) {

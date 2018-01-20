@@ -15,8 +15,8 @@ typedef struct {
 	uint8_t h_10:4;
 	uint8_t d_1:4;
 	uint8_t d_10:4;
-	uint8_t stat;
-	uint8_t s_old;
+	uint8_t mon_1:4;
+	uint8_t mon_10:4;
 } RTC;
 
 void rtc_set_clock(RTC data);
