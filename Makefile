@@ -82,7 +82,7 @@ OBJDIR = obj
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = main.c i2c.c serial.c dcf.c
+SRC = main.c i2c.c serial.c dcf.c rtc.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC =

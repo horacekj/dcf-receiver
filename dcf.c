@@ -12,7 +12,7 @@ volatile int8_t bit_index = -1;
 volatile int16_t low_counter = -1;
 volatile int8_t pulse_amplitude = 0; // length of "low" pulse
 volatile DcfDatetime received;
-volatile void(*callback)(DcfDatetime*) = NULL;
+volatile void(*callback)(volatile DcfDatetime*) = NULL;
 volatile bool message_ready = false;
 
 void evaluate_bit(int8_t state);
@@ -24,7 +24,7 @@ bool check_date_parity(void);
 uint8_t bcd_min_to_int(uint8_t min);
 
 // External interrupt from DCF77 pin.
-ISR(INT0_vect) {
+ISR(INT3_vect) {
 	if (fall_edge_counter < 800) {
 		// Ignore sooner falling edge. We hope ve did not loose sync.
 		return;
@@ -70,7 +70,7 @@ void dcf_1ms_update(void) {
 			pulse_amplitude = 0;
 
 		if (low_counter > 120)
-			pulse_amplitude += (PIND & 0x01) ? 1 : -1;
+			pulse_amplitude += ((PIND >> 3) & 0x01) ? 1 : -1;
 
 		if (low_counter == 200) {
 			low_counter = -1;
@@ -167,15 +167,15 @@ bool check_date_parity(void) {
 }
 
 void dcf_init(void) {
-	DDRD &= ~((1 << PIN0) | (1 << PIN1)); // DCF data pins as inputs
-	PORTD |= ((1 << PIN0) | (1 << PIN1)); // enable pull-ups
-	EICRA |= (1 << ISC01); // set INT0 to falling edge
-	EICRA &= ~(1 << ISC00); // set INT0 to falling edge
-	EIMSK |= (1 << INT0); // enable INT0
+	DDRD &= ~((1 << PIN3) | (1 << PIN4)); // DCF data pins as inputs
+	PORTD |= ((1 << PIN3) | (1 << PIN4)); // enable pull-ups
+	EICRA |= (1 << ISC31); // set INT3 to falling edge
+	EICRA &= ~(1 << ISC30); // set INT3 to falling edge
+	EIMSK |= (1 << INT3); // enable INT3
 
 	received.raw_sure = 0;
 }
 
-void dcf_register_on_received(void(*fp)(DcfDatetime*)) {
+void dcf_register_on_received(void(*fp)(volatile DcfDatetime*)) {
 	callback = fp;
 }

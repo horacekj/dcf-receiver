@@ -40,6 +40,6 @@ typedef struct {
 
 void dcf_init(void);
 void dcf_1ms_update(void);
-void dcf_register_on_received(void(*fp)(DcfDatetime*));
+void dcf_register_on_received(void(*fp)(volatile DcfDatetime*));
 
 #endif

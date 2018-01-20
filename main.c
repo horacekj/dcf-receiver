@@ -6,6 +6,8 @@
 #include "serial.h"
 #include "dcf.h"
 #include "bcd.h"
+#include "rtc.h"
+#include "i2c.h"
 
 void hw_init(void);
 
@@ -13,7 +15,7 @@ ISR(TIMER1_COMPA_vect) {
 	dcf_1ms_update();
 }
 
-void dcf_on_received(DcfDatetime* dt) {
+void dcf_on_received(volatile DcfDatetime* dt) {
 	char str[32];
 
 	sprintf(str, "%d.%d.%d %d:%d:00",
@@ -30,7 +32,30 @@ int main(void) {
 	hw_init();
 	serial_putline("Device initialized");
 
-	while (true);
+	RTC data;
+	uint8_t *ptr = &data.cntrl;              /* Definition of ptr */
+
+	*ptr++ = 0x80;                     /* Set control 32.768kHz, */
+	*ptr++ = 0;                     /* Set hundredth of sec */   
+	*ptr++ = 0x56;                  /* Set 56 secounds */
+	*ptr++ = 0x34;                  /* Set 34 minutes */
+	*ptr++ = 0x12;                  /* Set 12 hours */
+
+	rtc_set_clock(data);
+	data.cntrl = 0;
+	rtc_set_clock(data);
+
+	while (true) {
+		if (GET_INT_STAT) {
+			data = rtc_get_clock();
+			char str[10];
+			itoa(data.s_1, str, 10);
+			serial_putline(str);
+		}
+
+		for(int i = 0; i < 4; i++)
+			_delay_ms(200);
+	}
 }
 
 void timer_init(void) {
@@ -49,6 +74,7 @@ void hw_init(void) {
 	dcf_init();
 	dcf_register_on_received(&dcf_on_received);
 	timer_init();
+	rtc_init();
 
 	sei(); // allow interrupts globally
 }
