@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg id="svg2" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" height="260" width="747" version="1.2" xmlns:cc="http://creativecommons.org/ns#" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/">
+ <metadata id="metadata8">
+  <rdf:RDF>
+   <cc:Work rdf:about="">
+    <dc:format>image/svg+xml</dc:format>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title/>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs id="defs6">
+  <marker id="Arrow1Lstart" refY="0" refX="0" overflow="visible" orient="auto">
+   <path id="path3876" d="m0 0 5-5-17.5 5 17.5 5-5-5z" fill-rule="evenodd" transform="matrix(.8 0 0 .8 10 0)" stroke="#000" stroke-width="1pt"/>
+  </marker>
+  <marker id="Arrow1Lend" refY="0" refX="0" overflow="visible" orient="auto">
+   <path id="path3879" d="m0 0 5-5-17.5 5 17.5 5-5-5z" fill-rule="evenodd" transform="matrix(-.8 0 0 -.8 -10 0)" stroke="#000" stroke-width="1pt"/>
+  </marker>
+ </defs>
+ <g id="g3830" transform="translate(38.124 -46.936)">
+  <path id="path3811" d="m122.62 78.513v43.362" stroke="#000" fill="none"/>
+  <path id="path4886" style="block-progression:tb;text-indent:0;color:#000000;text-transform:none" d="m114.8 92.053-0.71875 0.6875 6.9375 6.9375h-20.094v0.03125 0.96875 0.0312h20.094l-6.9375 6.9375 0.71875 0.6875 7.625-7.625v-1.0312z"/>
+ </g>
+ <use id="use3840" xlink:href="#g3830" transform="matrix(-1 0 0 1 349.53 1.0344e-7)" height="361" width="869" y="0" x="0"/>
+ <use id="use3842" xlink:href="#g3830" transform="translate(150.07 1.0344e-7)" height="361" width="869" y="0" x="0"/>
+ <use id="use3844" xlink:href="#use3842" transform="translate(149.97 1.0344e-7)" height="361" width="869" y="0" x="0"/>
+ <use id="use3846" xlink:href="#use3844" transform="matrix(-1 0 0 1 1071.6 1.0344e-7)" height="361" width="869" y="0" x="0"/>
+ <use id="use3854" xlink:href="#g3830" transform="matrix(-1 0 0 1 484.55 1.0344e-7)" height="361" width="869" y="0" x="0"/>
+ <text id="text3858" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="26.247437" x="156.24878" font-family="DejaVu Sans" fill="#000000"><tspan id="tspan3860" font-size="22px" y="26.247437" x="156.24878" font-family="DejaVu Sans" fill="#000000">0.2 s</tspan></text>
+ <text id="text3862" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="26.247437" x="291.21759" font-family="DejaVu Sans" fill="#000000"><tspan id="tspan3864" font-size="22px" y="26.247437" x="291.21759" font-family="DejaVu Sans" fill="#000000">0.1 s</tspan></text>
+ <text id="text3866" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="26.102417" x="527.38916" font-family="DejaVu Sans" fill="#000000"><tspan id="tspan3868" font-size="22px" y="26.102417" x="527.38916" font-family="DejaVu Sans" fill="#000000">1 s</tspan></text>
+ <text id="text4690" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="220.08885" x="729.6123" font-family="Sans" fill="#000000"><tspan id="tspan4692" y="220.08885" x="729.6123" font-family="DejaVu Sans">t</tspan></text>
+ <text id="text4882" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" transform="rotate(-90)" line-height="125%" font-size="22px" y="60.433395" x="-194.61603" font-family="Sans" fill="#000000"><tspan id="tspan4884" font-size="22px" y="60.433395" x="-194.61603" font-family="DejaVu Sans">amplitude</tspan></text>
+ <text id="text4916" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="249.49513" x="311.7265" font-family="DejaVu Sans" fill="#000000"><tspan id="tspan4918" y="249.49513" x="311.7265">0</tspan></text>
+ <path id="path4924" marker-end="url(#Arrow1Lend)" d="m729.79 228.1h-660v-195" marker-start="url(#Arrow1Lstart)" stroke="#000" fill="none"/>
+ <path id="path4926" d="m69.786 78.096h90v127.5h30v-127.5h120v127.5h15v-127.5h135v127.5h30v-127.5h120v127.5h30v-127.5h60" stroke="#000" stroke-width="2" fill="none"/>
+ <text id="text5692" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="249.50587" x="167.97629" font-family="DejaVu Sans" fill="#000000"><tspan id="tspan5694" y="249.50587" x="167.97629">1</tspan></text>
+ <text id="text5696" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="249.68849" x="8.7861328" font-family="DejaVu Sans" fill="#000000"><tspan id="tspan5698" y="249.68849" x="8.7861328">code</tspan></text>
+ <text id="text5704" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="249.50587" x="466.97629" font-family="DejaVu Sans" fill="#000000"><tspan id="tspan5706" y="249.50587" x="466.97629">1</tspan></text>
+ <text id="text5708" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="22px" line-height="125%" y="249.50587" x="618.97626" font-family="DejaVu Sans" fill="#000000"><tspan id="tspan5710" y="249.50587" x="618.97626">1</tspan></text>
+ <text id="text3026" style="word-spacing:0px;letter-spacing:0px;text-anchor:end;text-align:end" line-height="125%" font-size="12px" y="82.182762" x="75.451317" font-family="DejaVu Sans" xml:space="preserve" fill="#000000"><tspan id="tspan3028" style="text-anchor:end;text-align:end" font-size="12px" y="82.182762" x="43.107567" font-family="DejaVu Sans" fill="#000000">100%</tspan></text>
+ <text id="text3030" style="word-spacing:0px;letter-spacing:0px;text-anchor:end;text-align:end" line-height="125%" font-size="12px" y="209.79578" x="67.810699" font-family="DejaVu Sans" xml:space="preserve" fill="#000000"><tspan id="tspan3032" style="text-anchor:end;text-align:end" font-size="12px" y="209.79578" x="43.107567" font-family="DejaVu Sans" fill="#000000">15%</tspan></text>
+</svg>
